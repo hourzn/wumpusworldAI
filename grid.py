@@ -23,14 +23,15 @@ class Grid:
 			while (self.matrix[i][j].states[state_index.PIT] or self.matrix[i][j].states[state_index.GOLD]):
 				(i, j) = (num(1, self.N), num(1, self.M))
 			self.matrix[i][j].states[state_index.GOLD] = True
+			print ("Gold location: ", (i, j))
 
 		for k in range(n_wumpus):
 			(i, j) = (num(1, self.N), num(1, self.M))
 			while (self.matrix[i][j].states[state_index.WUMPUS]):
 				(i, j) = (num(1, self.N), num(1, self.M))
 			self.matrix[i][j].states[state_index.WUMPUS] = True
+			
 
-                    
             
 	def __str__(self):
 		string = ""
