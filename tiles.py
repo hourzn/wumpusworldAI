@@ -2,7 +2,7 @@ from imports import *
 from states import *
 
 # Tile class
-# each Tile keeps track of what lies on them as well as observance state
+# each Tile keeps track of what lies on them
 def bool_to_intch(b):
 	ch = '1'
 	if b == False:
