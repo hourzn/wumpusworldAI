@@ -186,11 +186,6 @@ class agent:
         else:
             print("Agent has no more arrows!")
 
-            
-
-
-
-            
     # exit the cave
     def climb(self):
         (i, j) = self.location
