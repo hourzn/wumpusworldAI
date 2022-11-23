@@ -14,7 +14,34 @@ class wumpus_world:
         self.agent = agent(self.grid)
         self.game_over = False
         self.won = False
+<<<<<<< HEAD
         self.agent.update_percepts(self.grid)
+=======
+        # set tiles adjacent to wumpus to stench
+        (i, j) = self.wumpus.location
+        if i > 0:
+            self.grid.matrix[i - 1][j].states[percept_index.STENCH] = True
+        if i < self.grid.N - 1:
+            self.grid.matrix[i + 1][j].states[percept_index.STENCH] = True
+        if j > 0:
+            self.grid.matrix[i][j - 1].states[percept_index.STENCH] = True
+        if j < self.grid.M - 1:
+            self.grid.matrix[i][j + 1].states[percept_index.STENCH] = True
+
+        # set tiles adjacent to pits to breeze
+        for i in range(self.grid.N):
+            for j in range(self.grid.M):
+                if self.grid.matrix[i][j].states[state_index.PIT]:
+                    if i > 0:
+                        self.grid.matrix[i - 1][j].states[percept_index.BREEZE] = True
+                    if i < self.grid.N - 1:
+                        self.grid.matrix[i + 1][j].states[percept_index.BREEZE] = True
+                    if j > 0:
+                        self.grid.matrix[i][j - 1].states[percept_index.BREEZE] = True
+                    if j < self.grid.M - 1:
+                        self.grid.matrix[i][j + 1].states[percept_index.BREEZE] = True
+    
+>>>>>>> f661f3397a837a16c9522c704adbb8c9d74093fe
 
     # print the grid
     def __str__(self):
@@ -33,9 +60,9 @@ class wumpus_world:
             print(self.agent.__str__())
             print("\nWumpus location: ", self.wumpus.location)
             print("Agent location: ", self.agent.location)
-            print("Agent has arrow: ", self.agent.arrow)
-            print("Agent has gold: ", self.agent.gold)
-            print("Wumpus is alive: ", self.wumpus.alive)
+            # print("Agent has arrow: ", self.agent.arrow)
+            # print("Agent has gold: ", self.agent.gold)
+            # print("Wumpus is alive: ", self.wumpus.alive)
             print(self)
             # display agent actions from agent class
             self.agent.display_actions(self.grid)
