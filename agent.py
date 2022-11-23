@@ -4,12 +4,11 @@ from states import *
 from grid import *
 
 class agent:
-    # put agent in a random location on the edge of the grid where there is no pit and no gold
     def __init__(self, grid):
         self.matrix = grid.matrix
         self.N = grid.N
         self.M = grid.M
-        self.location = (1, 1)
+        self.location = (0,0)
         self.facing = directions.RIGHT
         self.score = 0
         self.moves = 0
@@ -29,6 +28,7 @@ class agent:
         string += "Agent's facing direction: " + str(self.facing) + "\n"
         string += "Agent's score: " + str(self.score) + "\n"
         string += "Agent's moves: " + str(self.moves) + "\n"
+        string += "                  breeze, stench, glitter, bump, scream\n"
         string += "Agent's percepts: " + str(self.percepts) + "\n"
         string += "Wumpus killed: " + str(self.wumpus_killed) + "\n"
         string += "------------------------------------------------------------"
@@ -36,55 +36,78 @@ class agent:
 
     # turn the agent 90 degrees to the left
     def turn_left(self):
-        self.facing = (self.facing - 1) % directions.N_STATES
+        if self.facing == directions.RIGHT:
+            self.facing = directions.UP
+        elif self.facing == directions.DOWN:
+            self.facing = directions.RIGHT
+        elif self.facing == directions.LEFT:
+            self.facing = directions.DOWN
+        elif self.facing == directions.UP:
+            self.facing = directions.LEFT
         self.moves += 1
-        print("Agent has turned left!")
+        print("\nAgent has turned left!")
+
     # turn the agent 90 degrees to the right
     def turn_right(self):
-        self.facing = (self.facing + 1) % directions.N_STATES
+        if self.facing == directions.RIGHT:
+            self.facing = directions.DOWN
+        elif self.facing == directions.DOWN:
+            self.facing = directions.LEFT
+        elif self.facing == directions.LEFT:
+            self.facing = directions.UP
+        elif self.facing == directions.UP:
+            self.facing = directions.RIGHT
         self.moves += 1
-        print("Agent has turned right!")
+        print("\nAgent has turned right!")
 
     # move the agent forward
+    # check if valid position based on facing direction, if position is invalid, then agent hits bumps percept
     def move_forward(self):
+        # set the agent's previous location to visited
         (i, j) = self.location
+        self.matrix[i][j].states[observances.VISITED] = True
         if self.facing == directions.RIGHT:
-            if j == self.M:
-                self.percepts[percept_index.BUMP] = True
-                print("\nYou bumped into a wall!")
-            else:
+            if j + 1 < self.M:
                 self.location = (i, j + 1)
-                self.moves += 1
                 print("\nAgent has moved forward!")
-
+            else:
+                self.percepts[percept_index.BUMP] = True
+                print("Agent has hit a wall!")
         elif self.facing == directions.DOWN:
-            if i == self.N:
-                self.percepts[percept_index.BUMP] = True
-                print("\nYou bumped into a wall!")
-            else:
+            if i + 1 < self.N:
                 self.location = (i + 1, j)
-                self.moves += 1
                 print("\nAgent has moved forward!")
-
+            else:
+                self.percepts[percept_index.BUMP] = True
+                print("Agent has hit a wall!")
         elif self.facing == directions.LEFT:
-            if j == 1:
-                self.percepts[percept_index.BUMP] = True
-                print("\nYou bumped into a wall!")
-            else:
+            if j - 1 >= 0:
                 self.location = (i, j - 1)
-                self.moves += 1
                 print("\nAgent has moved forward!")
-
-        elif self.facing == directions.UP:
-            if i == 1:
-                self.percepts[percept_index.BUMP] = True
-                print("\nYou bumped into a wall!")
             else:
+                self.percepts[percept_index.BUMP] = True
+                print("Agent has hit a wall!")
+        elif self.facing == directions.UP:
+            if i - 1 >= 0:
                 self.location = (i - 1, j)
-                self.moves += 1
                 print("\nAgent has moved forward!")
-        
+            else:
+                self.percepts[percept_index.BUMP] = True
+                print("Agent has hit a wall!")
+        self.moves += 1
+        # update the agent's percepts
+        self.update_percepts()
 
+  
+    # check ig agent is on a tile with a pit
+    def check_pit(self):
+        (i, j) = self.location
+        if self.matrix[i][j].states[state_index.PIT]:
+            print("Agent has fallen into a pit!")
+            self.game_over = True
+            exit("Game over!")
+
+        
     # display actions agent can take
     def display_actions(self):
         print("Actions:")
@@ -107,47 +130,66 @@ class agent:
         else:
             print("Invalid action!")
 
-
-
-    # check if agent has arrow
-    def has_arrow(self):
-        if self.arrow:
-            self.arrow = False
-            return True
-        return False
-    
-    # check if agent has gold
-    def has_gold(self):
-        if self.gold:
-            self.gold = False
-            return True
-        return False
-
-    # grab gold if possible
-    # if the agent grabs gold in the tile with gold display a message
+    # grab gold if agent is on a tile with glitter percept
     def grab(self):
-        if self.matrix[self.location[0]][self.location[1]].states[state_index.GOLD]:
+        (i, j) = self.location
+
+        # check if agent is on a tile with glitter percept
+        if self.matrix[i][j].states[percept_index.GLITTER]:
             self.gold = True
-            self.score += 1000
-            print("You got the gold!")
+            self.score += 1
+            self.moves += 1
+            print("Agent has grabbed the gold!")
         else:
-            print("There is no gold to grab!")
-        self.moves += 1
+            print("There is no gold here!")
 
     # shoot the arrow
+    # arrow flys until hits a wall or kills wumpus
     def shoot(self):
+        (i, j) = self.location
         if self.arrow:
+            # shoot the arrow until it hits a wall or kills the wumpus
+            while True:
+                # move the arrow forward
+                if self.facing == directions.RIGHT:
+                    if j + 1 < self.M:
+                        self.location = (i, j + 1)
+                    else:
+                        print("Arrow has hit a wall!")
+                        break
+                elif self.facing == directions.DOWN:
+                    if i + 1 < self.N:
+                        self.location = (i + 1, j)
+                    else:
+                        print("Arrow has hit a wall!")
+                        break
+                elif self.facing == directions.LEFT:
+                    if j - 1 >= 0:
+                        self.location = (i, j - 1)
+                    else:
+                        print("Arrow has hit a wall!")
+                        break
+                elif self.facing == directions.UP:
+                    if i - 1 >= 0:
+                        self.location = (i - 1, j)
+                    else:
+                        print("Arrow has hit a wall!")
+                        break
+                # check if arrow has killed the wumpus
+                (i, j) = self.location
+                if self.matrix[i][j].states[state_index.WUMPUS]:
+                    print("Arrow has killed the wumpus!")
+                    self.wumpus_killed = True
+                    break
             self.arrow = False
             self.moves += 1
-            # if the agent shoots the arrow in the tile with the wumpus display a message
-            if self.matrix[self.location[0]][self.location[1]].states[state_index.WUMPUS]:
-                self.wumpus_killed = True
-                self.score += 1000
-                print("You killed the wumpus!")
-            else:
-                print("You missed the wumpus!")
         else:
-            print("You don't have an arrow!")
+            print("Agent has no more arrows!")
+
+            
+
+
+
             
     # exit the cave
     def climb(self):
@@ -178,20 +220,4 @@ class agent:
         if self.matrix[i][j].states[state_index.START]:
             self.percepts[percept_index.BUMP] = True
     
-    # get the percept index
-    def get_percept_index(self):
-        index = 0
-        for i in range(percept_index.N_STATES):
-            if self.percepts[i]:
-                index += 2 ** i
-        return index
-
-    # get the state index
-    def get_state_index(self):
-        (i, j) = self.location
-        index = 0
-        for k in range(state_index.N_STATES):
-            if self.matrix[i][j].states[k]:
-                index += 2 ** k
-        return index
 
