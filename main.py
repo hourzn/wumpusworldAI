@@ -14,6 +14,9 @@ class wumpus_world:
         self.agent = agent(self.grid)
         self.game_over = False
         self.won = False
+<<<<<<< HEAD
+        self.agent.update_percepts(self.grid)
+=======
         # set tiles adjacent to wumpus to stench
         (i, j) = self.wumpus.location
         if i > 0:
@@ -38,6 +41,7 @@ class wumpus_world:
                     if j < self.grid.M - 1:
                         self.grid.matrix[i][j + 1].states[percept_index.BREEZE] = True
     
+>>>>>>> f661f3397a837a16c9522c704adbb8c9d74093fe
 
     # print the grid
     def __str__(self):
@@ -61,15 +65,20 @@ class wumpus_world:
             # print("Wumpus is alive: ", self.wumpus.alive)
             print(self)
             # display agent actions from agent class
-            self.agent.display_actions()
+            self.agent.display_actions(self.grid)
+            if (self.agent.game_over or self.agent.won):
+                break
             # if agent is in the same location as the wumpus, the game is over
-            if self.agent.location == self.wumpus.location:
+            if (self.agent.location == self.wumpus.location and not self.agent.wumpus_killed):
                 self.game_over = True
                 self.won = False
                 print("You have been eaten by the wumpus!")
+            if self.grid.matrix[self.agent.location[0]][self.agent.location[1]].states[state_index.PIT]:
+                self.game_over = True
+                self.won = False
+                print("You have fallen into a pit!")
 
 
 if __name__ == "__main__":
     game = wumpus_world()
     game.play()
-    

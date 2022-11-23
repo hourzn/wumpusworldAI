@@ -1,13 +1,18 @@
 from imports import *
-from grid import *
 from states import *
-from tiles import *
 
 # wumpus class
 
 class wumpus:
 	# put wumpus in a random location where there is no pit and no gold
 	def __init__(self, grid):
+<<<<<<< HEAD
+		# given the grid, find the indices and place wumpus there.
+		self.location = grid.loc_wumpus[0]
+		self.alive = True
+
+	# WUMPUS IS STATIC
+=======
 		(i, j) = (num(0, grid.N), num(0, grid.M))
 		while (grid.matrix[i][j].states[state_index.PIT] or grid.matrix[i][j].states[state_index.GOLD]):
 			(i, j) = (num(0, grid.N), num(0, grid.M))
@@ -32,11 +37,12 @@ class wumpus:
 		while (self.grid.matrix[i][j].states[state_index.PIT] or self.grid.matrix[i][j].states[state_index.GOLD]):
 			(i, j) = (num(0, self.grid.N), num(0, self.grid.M))
 		self.location = (i, j)
+>>>>>>> f661f3397a837a16c9522c704adbb8c9d74093fe
 
 	# kill the wumpus
 	def kill(self):
 		self.alive = False
-	
+
 	# check if the wumpus is alive
 	def is_alive(self):
 		return self.alive
@@ -44,5 +50,3 @@ class wumpus:
 	# check if the wumpus is at a location
 	def is_at(self, location):
 		return self.location == location
-
-	
