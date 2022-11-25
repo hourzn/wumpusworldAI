@@ -75,7 +75,7 @@ class agent:
 			self.moves += 1
 			self.update_percepts(grid)
 			self.map.update_knowledge(self.percepts, self.location[0], self.location[1])
-			print(self.map.worlds)
+			#print(self.map.worlds)
 
 	# display actions agent can take
 	def display_actions(self, grid):
@@ -174,6 +174,11 @@ class agent:
 			if (grid.matrix[adj_i][adj_j].states[state_index.GOLD]):
 				self.map.matrix[i][j].percepts[percept_index.GLITTER] = True
 				self.percepts[percept_index.GLITTER] = True
+
+			# is it safe?
+			if (self.map.matrix[i][j].is_safe()):
+				self.map.matrix[adj_i][adj_j].safe = True
+				self.map.safe_tiles.append((adj_i, adj_j))
 
 			# update obsevance state
 			if self.map.matrix[adj_i][adj_j].observance == observances.UNKNOWN:

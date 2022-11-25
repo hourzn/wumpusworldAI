@@ -55,16 +55,17 @@ class Grid:
 		# populating grid
 		# placing gold and wumpus
 		for k in range(n_gold):
-			(i, j) = (num(1, self.N), num(1, self.M))
+			(i, j) = (num(0, self.N), num(0, self.M))
 			while (self.matrix[i][j].states[state_index.PIT] or self.matrix[i][j].states[state_index.GOLD]):
-				(i, j) = (num(1, self.N), num(1, self.M))
+				(i, j) = (num(0, self.N), num(0, self.M))
 			self.matrix[i][j].states[state_index.GOLD] = True
 			self.loc_gold.append((i, j))
 
+		# the wumpus cannot be at the start position
 		for k in range(n_wumpus):
-			(i, j) = (num(1, self.N), num(1, self.M))
-			while (self.matrix[i][j].states[state_index.WUMPUS]):
-				(i, j) = (num(1, self.N), num(1, self.M))
+			(i, j) = (num(0, self.N), num(0, self.M))
+			while (self.matrix[i][j].states[state_index.WUMPUS] or (i, j) == self.START_POSITION):
+				(i, j) = (num(0, self.N), num(0, self.M))
 			self.matrix[i][j].states[state_index.WUMPUS] = True
 			self.loc_wumpus.append((i, j))
 

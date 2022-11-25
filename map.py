@@ -2,6 +2,8 @@ from imports import *
 from grid import *
 from states import *
 
+import numpy as np
+
 # this is the implementation file for the Map component class for the Agent class. The Map is composed of Tiles.
 # these Tiles are NOT the same as the Grid Tiles, as what they keep track of is different.
 # The Grid is used for the Agent to interact with the environment. It is the world.
@@ -9,10 +11,13 @@ from states import *
 
 
 # helper functions for binary strings
-
 # returns a binary string of unsigned integer n
 def bstring(n):
 	return str(bin(n))[2:]
+
+# returns decimal form of a binary string
+def dec(bstr):
+	return int(bstr, 2)
 
 # checks if bits indicated by indices from bstr is an element of generated
 def entail(bstr, generated, indices):
@@ -27,6 +32,20 @@ def remove(bstr, i):
 	x.remove(x[i])
 	return "".join(x)
 
+# determines whether a given binary string is a power of 2
+def is_2power(bstr):
+	powers = [1<<i for i in range(len(bstr))]
+	n = dec(bstr)
+	return n in powers
+
+# partitions set of binary strings, based on a given bit's state
+def bool_partition(A, i):
+	part = [[] for i in range(True + 1)]
+	for bstr in A:
+		j = True if (bstr[i] == "1") else False
+		part[j].append(bstr)
+	return part
+
 # returns index list of elements in list x, given list y
 # assumes y is a subset of x
 def get_indices(x, y):
@@ -37,8 +56,8 @@ def get_indices(x, y):
 def generate_bits(indices, p_index, p_state):
 	n = len(indices)
 	r = {"".zfill(n)}
-	#if (not p_state):
-		#return r
+	if (not p_state):
+		return list(r)
 
 	# if pit, then its all but all false
 	g = []
@@ -47,14 +66,14 @@ def generate_bits(indices, p_index, p_state):
 	else:
 	# otherwise only powers of 2
 		g = [bstring((1<<i)).zfill(n) for i in range(n)]
-	return g
+	return list(g)
 
 # generates possible worlds the generated bits adhere to, given a length, generated bits, and indices
 def generate_worlds(n, generated, indices, p_index):
 	p = []
 	# wumpus/gold only consider powers of 2
 	if (p_index > state_index.PIT):
-		numbers = [1<<i for i in range(n)]
+		numbers = [0] + [1<<i for i in range(n)]
 	else:
 		numbers = range(1<<n)
 	for i in numbers:
@@ -64,6 +83,71 @@ def generate_worlds(n, generated, indices, p_index):
 			p.append(bstr)
 	return p
 
+# returns list of non-zero world possibilities
+def get_possibilities(worlds, n):
+	zero = "".zfill(n)
+	w = worlds
+	if w in worlds:
+		w.remove(zero)
+	return w
+
+# determines if there is only 1 possibility. if there is, then the string is returned (otherwise empty string)
+def one_possibility(worlds):
+	bstr = ""
+	if (len(worlds) == 1 and is_2power(worlds[0])):
+		bstr = worlds[0]
+	return bstr
+
+# normalizes a distribution
+def normalize(dist):
+	n = (sum(dist))**-1
+	return list(n * np.array(dist))
+
+# gets the probability of an event, given a bit string and associated probability
+def product(bstr, p):
+	prod = 1
+	for bit in bstr:
+		f = p if (bit == "1") else (1 - p)
+		prod *= f
+	return prod
+
+# gets the sum of individual events, given a set of bit strings and probability
+def sum_of_product(bstrs, p):
+	sum = 0
+	for bstr in bstrs:
+		sum += (product(bstr, p))
+	return sum
+
+# gets the normalized probability distribution of a partitioned bit string set and probability
+def distribution(part, p):
+	dist = [sum_of_product(bstrs, p) for bstrs in part]
+	return normalize(dist)
+
+# performs a query, given sum list of unpartitioned binary strings, an index to partition by and a probability for a boolean event
+def query(A, i, p):
+	return distribution(bool_partition(A, i), p)
+
+# returns most likely index, given unpartitioned binary strings and a probability, and indices to partition by
+def most_likely_index(A, p, indices):
+	max_q = [1, 0]
+	maxdex = -1
+	ties = []
+	queries = []
+	for i in indices:
+		q = query(A, i, p)
+		queries.append([q, i])
+		if (q[True] > max_q[True]):
+			maxdex = i
+			max_q = q
+	for q in queries:
+		if (q[True] == max_q[True]):
+			ties.append(q)
+	return maxdex if not ties else break_tie(ties)
+
+# breaks a tie of most likely values and returns a random index from the ties list
+def break_tie(ties):
+	rand_q = num(0, len(ties))
+	return ties[rand_q][1]
 
 def str_indices(M):
 	s = ""
@@ -91,6 +175,11 @@ class MTile:
 		string = "|" + agentch + " " + obvs[self.observance] + " " + b + s + gl + " " + p + w + g + "| "
 		return string
 
+	# determines if a tile is safe or not
+	def is_safe(self):
+		has_pit = self.percepts[percept_index.BREEZE]
+		has_wumpus = self.percepts[percept_index.STENCH]
+		return (has_pit == False and has_wumpus == False)
 
 class Map:
 	def __init__(self, grid):
@@ -104,6 +193,14 @@ class Map:
 
 		# list to hold possibilities of PIT/WUMPUS/GOLD
 		self.worlds = [[] for i in range(percept_index.BUMP)]
+
+		# list to hold SAFE Tiles
+		self.safe_tiles = []
+
+		self.probs = [0 for i in range(state_index.N_STATES)]
+		self.probs[state_index.PIT] = grid.p_pit
+		self.probs[state_index.WUMPUS] = grid.p_wumpus
+		self.probs[state_index.GOLD] = grid.p_gold
 
 	def _str_grid(self):
 		# string of grid
@@ -141,11 +238,19 @@ class Map:
 			s += "\n"
 		return s
 
+	def _str_safe(self):
+		s = "Safe tiles: "
+		for tile in self.safe_tiles:
+			s += str(tile) + " "
+		s += "\n"
+		return s
+
 	def __str__(self):
 		string = "\nCurrent map:\n"
 		string += self._str_grid()
 		string += self._str_observed()
-		string += self._str_worlds() # buggy
+		string += self._str_worlds()
+		string += self._str_safe()
 		return string
 
 	# returns (valid) adjacent strings that are observed
@@ -184,23 +289,81 @@ class Map:
 			else:
 				w = [bstr + bstring(j) for j in range(1<<1) for bstr in self.worlds[i]]
 			self.worlds[i] = w
-		print("added tile! new worlds: ", self.worlds[i])
 
-	# updates the knowledge/possible models given a percept and current location
+	# update_knowledge: gets new models and performs the reasoning
 	def update_knowledge(self, percepts, i, j):
-		# index mapping
-		indices = get_indices(self.observed, self._adjacent_observed(i, j))
+		adj = self._adjacent_observed(i, j)
+		indices = get_indices(self.observed, adj)
+		self._get_knowledge(percepts, indices)
+
+		# make inferences
+		self._infer(adj, indices)
+
+	# gets the possible models given a percept and adjacent indices
+	def _get_knowledge(self, percepts, indices):
 
 		# intersection!!
 		for k in range(len(self.worlds)):
 			new_worlds = []
 			b = []
 			g = []
-			if (percepts[k] == False):
-				new_worlds = ["".zfill(len(indices))]
-			else:
-				b = generate_bits(indices, k, percepts[k])
-				g = generate_worlds(len(self.observed), b, indices, k)
+			b = generate_bits(indices, k, percepts[k])
+			g = generate_worlds(len(self.observed), b, indices, k)
 			new_worlds = list(set(self.worlds[k]) & set(g))
 			self.worlds[k] = new_worlds
-			print("worlds for percept ", k, ":\t", self.worlds[k])
+
+	# given a tile location and its contents state, marks Tile according to that state
+	def _mark_tile(self, l, m, state, adj):
+		self.matrix[l][m].marks[state] = True
+
+		# remaining adjacent tiles that are not that location are considered SAFE
+		for (i, j) in adj:
+			if ((i, j) != (l, m) and self.matrix[i][j].safe == False):
+				self.matrix[i][j].safe = True
+				self.safe_tiles.append((i, j))
+
+	# performs logical inference
+	def _logic_infer(self, bstr):
+		k = bstr.index('1')
+		(l, m) = self.observed[k]
+		return (l, m)
+
+	# removes contradictory possibilities
+	def _remove_contradictions(self, state, indices, mli):
+		# removing bstrs where the mli is off
+		exclude = set()
+		for i in indices:
+			for bstr in self.worlds[state]:
+				b = {bstr}
+				if (i == mli and bstr[i] == "0"):
+					exclude |= b
+				elif (state > state_index.PIT and bstr[i] == "1"):
+					exclude |= b
+		self.worlds[state] = list(set(self.worlds[state]) - exclude)
+
+	# performs probabilistic inference
+	def _prob_infer(self, state, indices):
+		mli = most_likely_index(self.worlds[state], self.probs[state], indices)
+		(l, m) = self.observed[mli]
+		return (l, m)
+
+	# makes inferences about the possible true state
+	def _infer(self, adj, indices):
+		zero = "".zfill(len(self.observed))
+		z = [zero]
+		(l, m) = (0, 0)
+		for i in range(len(self.worlds)):
+			possibilities = get_possibilities(self.worlds[i], len(self.observed))
+			if (not possibilities or possibilities == z):
+				continue # do not perform queries on Tiles that don't have anything
+
+			if (not (bstr := one_possibility(self.worlds[i]))):
+				# probabilistic query to get the most likely Tile
+				(l, m) = self._prob_infer(i, indices)
+			else:
+				# otherwise get tile location according to logical reasoning
+				(l, m) = self._logic_infer(bstr)
+			self._mark_tile(l, m, i, adj)
+			self._remove_contradictions(i, indices, self.observed.index((l, m)))
+			if (not self.worlds[i]):
+				self.worlds[i].append(zero)
