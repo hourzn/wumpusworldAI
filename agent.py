@@ -115,7 +115,8 @@ class agent:
 			if grid.matrix[arrow_position[0]][arrow_position[1]].states[state_index.WUMPUS]:
 				self.wumpus_killed = True
 				self.score += 1000
-				print("You killed the wumpus!")
+				print("\nYou killed the wumpus!\n")
+				break
 			## make the scream percept audible
 			arrow_position = get_adjacent_position(arrow_position[0], arrow_position[1], self.facing)
 		if (not valid_location(arrow_position[0], arrow_position[1], self.map.N, self.map.M)):
@@ -183,15 +184,14 @@ class agent:
 				# move towards the start location
 				last_location = self.location
 				while (self.location != self.start_position):
-					# print the adjacent tiles to the agent
-					print("Adjacent tiles to the agent:")
+					print("\nAdjacent tiles to the agent:")
 
 					# get the adjacent tiles to the agent
 					adjacent_tiles = self.get_adjacent_tiles(last_location)
 					# print the adjacent tiles to the agent
 					for tile in adjacent_tiles:
 						if tile.location not in self.visited:
-							print(tile.location)
+							pass
 						else:
 							self.visited.pop()
 							# turn towards the tile
@@ -215,6 +215,7 @@ class agent:
 				# if agent does not have gold, move towards safe tiles
 				if self.percepts[percept_index.STENCH]:
 					self.shoot(grid)
+
 
 				# print the adjacent tiles to the agent
 				print("Adjacent tiles to the agent:")

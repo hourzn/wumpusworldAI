@@ -34,6 +34,9 @@ class wumpus_world:
                 self.game_over = True
                 print("Impossible grid to solve.")
                 exit()
+
+
+
             self.game_over = self.agent.game_over
             self.won = self.agent.won
             print(self.agent.__str__())
@@ -42,10 +45,10 @@ class wumpus_world:
             print("Agent has arrow: ", self.agent.arrow)
             print("Agent has gold: ", self.agent.gold)
             print("Gold is at location: ", self.grid.loc_gold)
-            print("Wumpus is alive: ", self.wumpus.alive)
             print(self)
             # print pits
             print("Pits are at: ")
+
             for i in range(self.grid.N):
                 for j in range(self.grid.M):
                     if (self.grid.matrix[i][j].states[state_index.PIT]):
