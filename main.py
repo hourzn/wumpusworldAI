@@ -29,6 +29,11 @@ class wumpus_world:
     # play the game
     def play(self):
         while not self.game_over:
+            # check for impossible states
+            if self.grid.impossible:
+                self.game_over = True
+                print("Impossible grid to solve.")
+                exit()
             self.game_over = self.agent.game_over
             self.won = self.agent.won
             print(self.agent.__str__())
@@ -36,10 +41,18 @@ class wumpus_world:
             print("Agent location: ", self.agent.location)
             print("Agent has arrow: ", self.agent.arrow)
             print("Agent has gold: ", self.agent.gold)
+            print("Gold is at location: ", self.grid.loc_gold)
             print("Wumpus is alive: ", self.wumpus.alive)
             print(self)
-            # display agent actions from agent class
-            self.agent.display_actions(self.grid)
+            # print pits
+            print("Pits are at: ")
+            for i in range(self.grid.N):
+                for j in range(self.grid.M):
+                    if (self.grid.matrix[i][j].states[state_index.PIT]):
+                        print((i, j))
+            print("\n")
+
+            self.agent.get_action(self.grid)
             if (self.agent.game_over or self.agent.won):
                 break
             # if agent is in the same location as the wumpus, the game is over
@@ -51,6 +64,7 @@ class wumpus_world:
                 self.game_over = True
                 self.won = False
                 print("You have fallen into a pit!")
+
 
 
 if __name__ == "__main__":

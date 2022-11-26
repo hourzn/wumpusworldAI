@@ -42,6 +42,7 @@ class Grid:
 		self.p_gold = self.n_gold * ((self.N * self.M) - 1)**-1
 		self.loc_gold = []
 		self.loc_wumpus = []
+		self.impossible = False
 
 
 		# setting up the grid
@@ -61,6 +62,9 @@ class Grid:
 			self.matrix[i][j].states[state_index.GOLD] = True
 			self.loc_gold.append((i, j))
 
+
+
+
 		# the wumpus cannot be at the start position
 		for k in range(n_wumpus):
 			(i, j) = (num(0, self.N), num(0, self.M))
@@ -76,3 +80,19 @@ class Grid:
 				string += str(self.matrix[i][j])
 			string += "\n"
 		return string
+
+	# check grid for impossible states
+	def check_impossible(self):
+		# check if startiing position is surrounded by pits
+		(i, j) = self.START_POSITION
+		if self.matrix[3][1].states[state_index.PIT] and self.matrix[2][0].states[state_index.PIT]:
+			self.impossible = True
+			return
+		# check if wumpus and gold are in the same location and surrounded by pits
+		for (i, j) in self.loc_wumpus:
+			if self.matrix[i][j].states[state_index.GOLD]:
+				if (valid_location(i + 1, j, self.N, self.M) and self.matrix[i + 1][j].states[state_index.PIT]) and (valid_location(i - 1, j, self.N, self.M) and self.matrix[i - 1][j].states[state_index.PIT]) and (valid_location(i, j + 1, self.N, self.M) and self.matrix[i][j + 1].states[state_index.PIT]) and (valid_location(i, j - 1, self.N, self.M) and self.matrix[i][j - 1].states[state_index.PIT]):
+					self.impossible = True
+					return
+
+
