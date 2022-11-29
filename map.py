@@ -282,6 +282,9 @@ class Map:
 
     def _str_safe(self):
         s = "Safe tiles: "
+        # remove all duplicates in safe_tiles
+        self.safe_tiles = list(set(self.safe_tiles))
+
         for tile in self.safe_tiles:
             s += str(tile) + " "
         s += "\n"
